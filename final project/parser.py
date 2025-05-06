@@ -43,8 +43,9 @@ grammar = """
     import_statement = "import" expression
     break_statement = "break"
     continue_statement = "continue"
+    try_statement = "try" statement_list "catch" "(" identifier ")" statement_list
 
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
 
     program = [ statement { ";" statement } {";"} ]
     """
@@ -1218,9 +1219,57 @@ def test_parse_function_statement():
     }
 
 
+def parse_try_statement(tokens):
+    """
+    try_statement = "try" statement_list "catch" "(" identifier ")" statement_list
+    """
+    assert tokens[0]["tag"] == "try", f"Expected 'try' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    try_block, tokens = parse_statement_list(tokens)
+    assert tokens[0]["tag"] == "catch", f"Expected 'catch' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    assert tokens[0]["tag"] == "(", f"Expected '(' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    assert tokens[0]["tag"] == "identifier", f"Expected identifier at position {tokens[0]['position']}"
+    error_var = tokens[0]["value"]
+    tokens = tokens[1:]
+    assert tokens[0]["tag"] == ")", f"Expected ')' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    catch_block, tokens = parse_statement_list(tokens)
+    
+    return {"tag": "try", "try_block": try_block, "error_var": error_var, "catch_block": catch_block}, tokens
+
+def test_parse_try_statement():
+    """
+    try_statement = "try" statement_list "catch" "(" identifier ")" statement_list
+    """
+    print("testing parse_try_statement...")
+    
+    ast, tokens = parse_try_statement(tokenize('try { x = 1; } catch (e) { print(e); }'))
+    assert ast == {
+        "tag": "try",
+        "try_block": {"tag": "statement_list", "statements": [
+            {"tag": "assign",
+            "target": {"tag": "identifier", "value": "x"},
+            "value": {"tag": "number", "value": 1}}]
+        },
+        "error_var": "e",
+        "catch_block": {"tag": "statement_list", "statements": [
+            {"tag": "print",
+            "value": {
+                "tag": "complex",
+                "base": {"tag": "identifier", "value": "e"},
+                "index": None
+                    }
+                }
+            ]
+        }
+    }
+
+
 def parse_statement(tokens):
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
     """
     tag = tokens[0]["tag"]
     # note: none of these consumes a token
@@ -1244,12 +1293,14 @@ def parse_statement(tokens):
         return parse_continue_statement(tokens)
     if tag == "assert":
         return parse_assert_statement(tokens)
+    if tag == "try":
+        return parse_try_statement(tokens)
     return parse_expression(tokens)
 
 
 def test_parse_statement():
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
     """
     print("testing parse_statement...")
 
