@@ -891,7 +891,7 @@ def parse_statement_list(tokens):
         statement, tokens = parse_statement(tokens)
         statements.append(statement)
         # we don't need a semicolon terminator after block-terminated statements
-        if statement["tag"] in ["if","while","function"]:     
+        if statement["tag"] in ["if","while","function","try"]:     
             continue
         # we don't need a semicolon terminator after function assignments
         if statement["tag"] == "assign" and statement["value"]["tag"] == "function":
@@ -1248,19 +1248,23 @@ def test_parse_try_statement():
     ast, tokens = parse_try_statement(tokenize('try { x = 1; } catch (e) { print(e); }'))
     assert ast == {
         "tag": "try",
-        "try_block": {"tag": "statement_list", "statements": [
-            {"tag": "assign",
-            "target": {"tag": "identifier", "value": "x"},
-            "value": {"tag": "number", "value": 1}}]
+        "try_block": {
+            "tag": "statement_list",
+            "statements": [
+                {
+                    "tag": "assign",
+                    "target": {"tag": "identifier", "value": "x"},
+                    "value": {"tag": "number", "value": 1}
+                }
+            ]
         },
         "error_var": "e",
-        "catch_block": {"tag": "statement_list", "statements": [
-            {"tag": "print",
-            "value": {
-                "tag": "complex",
-                "base": {"tag": "identifier", "value": "e"},
-                "index": None
-                    }
+        "catch_block": {
+            "tag": "statement_list", 
+            "statements": [
+                {
+                    "tag": "print",
+                    "value": {"tag": "identifier", "value": "e"}
                 }
             ]
         }
@@ -1462,6 +1466,7 @@ if __name__ == "__main__":
         test_parse_continue_statement,
         test_parse_import_statement,
         test_parse_assert_statement,
+        test_parse_try_statement,
         test_parse_statement,
         test_parse_program,
     ]
