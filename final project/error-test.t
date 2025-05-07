@@ -61,3 +61,20 @@ try {
     print(e.type);
     print(e.message);
 }
+
+// Test nested throw
+print("Test 7: Nested throw");
+try {
+    try {
+        throw "inner error";
+    } catch (e) {
+        print("Caught inner error:");
+        print(e.type);
+        print(e.message);
+        throw "outer error";  // Throw from within catch block
+    }
+} catch (e) {
+    print("Caught outer error:");
+    print(e.type);
+    print(e.message);
+}
