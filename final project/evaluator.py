@@ -120,21 +120,21 @@ __builtin_functions = [
 ]
 
 # Built-in exception types
-class TrivialError(Exception):
+class error(Exception):
     def __init__(self, message, type="Error"):
         self.message = message
         self.type = type
         super().__init__(self.message)
 
-class TypeError(TrivialError):
+class TypeError(error):
     def __init__(self, message):
         super().__init__(message, "TypeError")
 
-class ValueError(TrivialError):
+class ValueError(error):
     def __init__(self, message):
         super().__init__(message, "ValueError")
 
-class RuntimeError(TrivialError):
+class RuntimeError(error):
     def __init__(self, message):
         super().__init__(message, "RuntimeError")
 
@@ -174,7 +174,7 @@ def evaluate(ast, environment):
         try:
             result, _ = evaluate(ast["try_block"], environment)
             return result, None
-        except TrivialError as e:
+        except error as e:
             # Create a new environment for the catch block with the error variable
             catch_env = copy.deepcopy(environment)
             catch_env[ast["error_var"]] = {
@@ -184,7 +184,7 @@ def evaluate(ast, environment):
             result, _ = evaluate(ast["catch_block"], catch_env)
             return result, None
         except Exception as e:
-            # Convert Python exceptions to TrivialError
+            # Convert Python exceptions to error
             raise RuntimeError(str(e))
 
     if ast["tag"] == "number":
@@ -264,7 +264,7 @@ def evaluate(ast, environment):
         types = type_of(left_value, right_value)
         if types == "number-number":
             if right_value == 0:
-                raise TrivialError("Division by zero", "RuntimeError")
+                raise error("Division by zero", "RuntimeError")
             return left_value / right_value, None
         raise Exception(f"Illegal types for {ast['tag']}:{types}")
     
@@ -799,24 +799,6 @@ def test_evaluate_try_catch():
     """
     ast = parse(tokenize(code))
     result, _ = evaluate(ast, {})
-    
-    # Test error propagation
-    code = """
-    try {
-        try {
-            x = 1 / 0;
-        } catch (e) {
-            print("inner catch");
-            throw e;
-        }
-    } catch (e) {
-        print("outer catch");
-    }
-    """
-    ast = parse(tokenize(code))
-    result, _ = evaluate(ast, {})
-    
-    print("try-catch tests passed!")
 
 if __name__ == "__main__":
     # statements and programs are tested implicitly

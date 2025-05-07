@@ -3,7 +3,7 @@
 print("Testing error handling features...");
 
 // Test try-catch
-print("\nTest 1: Basic try-catch");
+print("Test 1: Basic try-catch");
 try {
     x = 1 / 0;
 } catch (e) {
@@ -13,7 +13,7 @@ try {
 }
 
 // Test type error
-print("\nTest 2: Type errors");
+print("Test 2: Type errors");
 try {
     x = "hello" + 42;
 } catch (e) {
@@ -23,9 +23,9 @@ try {
 }
 
 // Test value error
-print("\nTest 3: Value errors");
+print("Test 3: Value errors");
 try {
-    x = head(42);  // head() requires a list
+    head([1, 2, 3], "extra");  // Passing extra argument to trigger ValueError
 } catch (e) {
     print("Caught value error:");
     print(e.type);

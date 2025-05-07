@@ -1248,19 +1248,23 @@ def test_parse_try_statement():
     ast, tokens = parse_try_statement(tokenize('try { x = 1; } catch (e) { print(e); }'))
     assert ast == {
         "tag": "try",
-        "try_block": {"tag": "statement_list", "statements": [
-            {"tag": "assign",
-            "target": {"tag": "identifier", "value": "x"},
-            "value": {"tag": "number", "value": 1}}]
+        "try_block": {
+            "tag": "statement_list",
+            "statements": [
+                {
+                    "tag": "assign",
+                    "target": {"tag": "identifier", "value": "x"},
+                    "value": {"tag": "number", "value": 1}
+                }
+            ]
         },
         "error_var": "e",
-        "catch_block": {"tag": "statement_list", "statements": [
-            {"tag": "print",
-            "value": {
-                "tag": "complex",
-                "base": {"tag": "identifier", "value": "e"},
-                "index": None
-                    }
+        "catch_block": {
+            "tag": "statement_list", 
+            "statements": [
+                {
+                    "tag": "print",
+                    "value": {"tag": "identifier", "value": "e"}
                 }
             ]
         }
@@ -1462,6 +1466,7 @@ if __name__ == "__main__":
         test_parse_continue_statement,
         test_parse_import_statement,
         test_parse_assert_statement,
+        test_parse_try_statement,
         test_parse_statement,
         test_parse_program,
     ]
