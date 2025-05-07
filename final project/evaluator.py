@@ -1,7 +1,5 @@
 from tokenizer import tokenize
 from parser import parse
-from pprint import pprint
-import copy
 
 def type_of(*args):
     def single_type(x):
@@ -176,10 +174,12 @@ def evaluate(ast, environment):
             return result, None
         except error as e:
             # Create a new environment for the catch block with the error variable
-            catch_env = copy.deepcopy(environment)
-            catch_env[ast["error_var"]] = {
-                "type": e.type,
-                "message": e.message
+            catch_env = {
+                ast["error_var"]: {
+                    "type": e.type,
+                    "message": e.message
+                },
+                "$parent": environment
             }
             result, _ = evaluate(ast["catch_block"], catch_env)
             return result, None
