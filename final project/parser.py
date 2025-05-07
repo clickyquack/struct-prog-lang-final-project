@@ -44,8 +44,9 @@ grammar = """
     break_statement = "break"
     continue_statement = "continue"
     try_statement = "try" statement_list "catch" "(" identifier ")" statement_list
+    throw_statement = "throw" expression
 
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | throw_statement | expression
 
     program = [ statement { ";" statement } {";"} ]
     """
@@ -1271,9 +1272,36 @@ def test_parse_try_statement():
     }
 
 
+def parse_throw_statement(tokens):
+    """
+    throw_statement = "throw" expression
+    """
+    assert tokens[0]["tag"] == "throw", f"Expected 'throw' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    value, tokens = parse_expression(tokens)
+    return {"tag": "throw", "value": value}, tokens
+
+def test_parse_throw_statement():
+    """
+    throw_statement = "throw" expression
+    """
+    print("testing parse_throw_statement...")
+    ast, tokens = parse_throw_statement(tokenize('throw "error message"'))
+    assert ast == {
+        "tag": "throw",
+        "value": {"tag": "string", "value": "error message"}
+    }
+    
+    ast, tokens = parse_throw_statement(tokenize("throw 42"))
+    assert ast == {
+        "tag": "throw",
+        "value": {"tag": "number", "value": 42}
+    }
+
+
 def parse_statement(tokens):
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | throw_statement | expression
     """
     tag = tokens[0]["tag"]
     # note: none of these consumes a token
@@ -1299,12 +1327,14 @@ def parse_statement(tokens):
         return parse_assert_statement(tokens)
     if tag == "try":
         return parse_try_statement(tokens)
+    if tag == "throw":
+        return parse_throw_statement(tokens)
     return parse_expression(tokens)
 
 
 def test_parse_statement():
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | try_statement | throw_statement | expression
     """
     print("testing parse_statement...")
 
@@ -1467,6 +1497,7 @@ if __name__ == "__main__":
         test_parse_import_statement,
         test_parse_assert_statement,
         test_parse_try_statement,
+        test_parse_throw_statement,
         test_parse_statement,
         test_parse_program,
     ]

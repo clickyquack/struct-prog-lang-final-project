@@ -100,11 +100,11 @@ def ast_to_string(ast):
         return "(" + ",".join(items) + ")"
 
     if ast["tag"] == "complex":
-        s = f"{ast_to_string(ast["base"])}[{ast_to_string(ast["index"])}]"
+        s = f"{ast_to_string(ast['base'])}[{ast_to_string(ast['index'])}]"
         return s
 
     if ast["tag"] == "assign":
-        s = f"{ast_to_string(ast["target"])} = {ast_to_string(ast["value"])}]"
+        s = f"{ast_to_string(ast['target'])} = {ast_to_string(ast['value'])}]"
         return s
 
     if ast["tag"] == "return":
@@ -187,6 +187,15 @@ def evaluate(ast, environment):
             # Convert Python exceptions to error
             raise RuntimeError(str(e))
 
+    if ast["tag"] == "throw":
+        value, _ = evaluate(ast["value"], environment)
+        if isinstance(value, str):
+            raise error(value)
+        elif isinstance(value, dict) and "type" in value and "message" in value:
+            raise error(value["message"], value["type"])
+        else:
+            raise error(str(value))
+
     if ast["tag"] == "number":
         if not isinstance(ast["value"], (float, int)):
             raise TypeError(f"unexpected type {type(ast['value'])}")
@@ -244,7 +253,7 @@ def evaluate(ast, environment):
         types = type_of(left_value, right_value)
         if types == "number-number":
             return left_value - right_value, None
-        raise Exception(f"Illegal types for {ast["tag"]}:{types}")
+        raise Exception(f"Illegal types for {ast['tag']}:{types}")
 
     if ast["tag"] == "*":
         left_value, _ = evaluate(ast["left"], environment)
@@ -800,6 +809,33 @@ def test_evaluate_try_catch():
     ast = parse(tokenize(code))
     result, _ = evaluate(ast, {})
 
+def test_evaluate_throw():
+    print("testing throw statement...")
+    
+    # Test throwing a string error
+    code = """
+    try {
+        throw "test error";
+    } catch (e) {
+        print(e.type);
+        print(e.message);
+    }
+    """
+    ast = parse(tokenize(code))
+    result, _ = evaluate(ast, {})
+    
+    # Test throwing an error object
+    code = """
+    try {
+        throw {"type": "CustomError", "message": "custom error"};
+    } catch (e) {
+        print(e.type);
+        print(e.message);
+    }
+    """
+    ast = parse(tokenize(code))
+    result, _ = evaluate(ast, {})
+
 if __name__ == "__main__":
     # statements and programs are tested implicitly
     test_evaluate_single_value()
@@ -822,4 +858,5 @@ if __name__ == "__main__":
     test_evaluate_builtins()
     test_evaluator_with_new_tags()
     test_evaluate_try_catch()
+    test_evaluate_throw()
     print("done.")

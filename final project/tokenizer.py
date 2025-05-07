@@ -22,6 +22,7 @@ patterns = [
     [r"exit", "exit"],  # exit keyword
     [r"try", "try"],  # try keyword
     [r"catch", "catch"],  # catch keyword
+    [r"throw", "throw"],  # throw keyword
     [r"and", "&&"],  # alternate for &&
     [r"or", "||"],  # alternate for ||
     [r"not", "!"],  # alternate for !
@@ -237,6 +238,7 @@ def test_keywords():
         "exit",
         "try",     # try-catch keywords
         "catch",
+        "throw",   # throw keyword
     ]:
         t = tokenize(keyword)
         assert len(t) == 2

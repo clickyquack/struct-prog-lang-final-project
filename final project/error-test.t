@@ -31,3 +31,33 @@ try {
     print(e.type);
     print(e.message);
 }
+
+// Test throw statement
+print("Test 4: Throw statement");
+try {
+    throw "test error message";
+} catch (e) {
+    print("Caught thrown error:");
+    print(e.type);
+    print(e.message);
+}
+
+// Test throw with custom error object
+print("Test 5: Throw with custom error object");
+try {
+    throw {"type": "CustomError", "message": "custom error message"};
+} catch (e) {
+    print("Caught custom error:");
+    print(e.type);
+    print(e.message);
+}
+
+// Test throw with number
+print("Test 6: Throw with number");
+try {
+    throw 42;
+} catch (e) {
+    print("Caught number error:");
+    print(e.type);
+    print(e.message);
+}
