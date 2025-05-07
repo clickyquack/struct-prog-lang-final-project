@@ -1265,8 +1265,6 @@ def test_parse_try_statement():
             ]
         }
     }
-    
-    print("parse_try_statement tests passed!")
 
 
 def parse_statement(tokens):
