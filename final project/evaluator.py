@@ -119,40 +119,85 @@ __builtin_functions = [
     "head","tail","length","keys"
 ]
 
+# Built-in exception types
+class TrivialError(Exception):
+    def __init__(self, message, type="Error"):
+        self.message = message
+        self.type = type
+        super().__init__(self.message)
+
+class TypeError(TrivialError):
+    def __init__(self, message):
+        super().__init__(message, "TypeError")
+
+class ValueError(TrivialError):
+    def __init__(self, message):
+        super().__init__(message, "ValueError")
+
+class RuntimeError(TrivialError):
+    def __init__(self, message):
+        super().__init__(message, "RuntimeError")
+
 def evaluate_builtin_function(function_name, args):
     if function_name == "head":
-        assert len(args) == 1 and isinstance(args[0], list), "head() requires a single list argument"
+        if not isinstance(args[0], list):
+            raise TypeError("head() requires a single list argument")
+        if len(args) != 1:
+            raise ValueError("head() requires exactly one argument")
         return (args[0][0] if args[0] else None), None
 
     if function_name == "tail":
-        assert len(args) == 1 and isinstance(args[0], list), "tail() requires a single list argument"
+        if not isinstance(args[0], list):
+            raise TypeError("tail() requires a single list argument")
+        if len(args) != 1:
+            raise ValueError("tail() requires exactly one argument")
         return args[0][1:], None
 
     if function_name == "length":
-        assert len(args) == 1 and isinstance(args[0], (list, dict, str)), "length() requires list, object, or string"
+        if not isinstance(args[0], (list, dict, str)):
+            raise TypeError("length() requires list, object, or string")
+        if len(args) != 1:
+            raise ValueError("length() requires exactly one argument")
         return len(args[0]), None
 
     if function_name == "keys":
-        assert len(args) == 1 and isinstance(args[0], dict), "keys() requires an object argument"
+        if not isinstance(args[0], dict):
+            raise TypeError("keys() requires an object argument")
+        if len(args) != 1:
+            raise ValueError("keys() requires exactly one argument")
         return list(args[0].keys()), None
 
-    assert False, f"Unknown builtin function '{function_name}'"
+    raise RuntimeError(f"Unknown builtin function '{function_name}'")
 
 def evaluate(ast, environment):
+    if ast["tag"] == "try":
+        try:
+            result, _ = evaluate(ast["try_block"], environment)
+            return result, None
+        except TrivialError as e:
+            # Create a new environment for the catch block with the error variable
+            catch_env = copy.deepcopy(environment)
+            catch_env[ast["error_var"]] = {
+                "type": e.type,
+                "message": e.message
+            }
+            result, _ = evaluate(ast["catch_block"], catch_env)
+            return result, None
+        except Exception as e:
+            # Convert Python exceptions to TrivialError
+            raise RuntimeError(str(e))
+
     if ast["tag"] == "number":
-        assert type(ast["value"]) in [
-            float,
-            int,
-        ], f"unexpected type {type(ast["value"])}"
+        if not isinstance(ast["value"], (float, int)):
+            raise TypeError(f"unexpected type {type(ast['value'])}")
         return ast["value"], None
     if ast["tag"] == "boolean":
-        assert ast["value"] in [
-            True,
-            False,
-        ], f"unexpected type {type(ast["value"])}"
+        if ast["value"] not in [True, False]:
+            raise TypeError(f"unexpected type {type(ast['value'])}")
         return ast["value"], None
     if ast["tag"] == "string":
-        assert type(ast["value"]) == str, f"unexpected type {type(ast["value"])}"
+        if not isinstance(ast["value"], str):
+            raise TypeError(f"unexpected type {type(ast['value'])}")
         return ast["value"], None
     if ast["tag"] == "null":
         return None, None
@@ -192,7 +237,7 @@ def evaluate(ast, environment):
             return {**left_value, **right_value}, None
         if types == "array-array":
             return left_value + right_value, None
-        raise Exception(f"Illegal types for {ast['tag']}: {types}")
+        raise TypeError(f"Illegal types for {ast['tag']}: {types}")
     if ast["tag"] == "-":
         left_value, _ = evaluate(ast["left"], environment)
         right_value, _ = evaluate(ast["right"], environment)
@@ -218,7 +263,8 @@ def evaluate(ast, environment):
         right_value, _ = evaluate(ast["right"], environment)
         types = type_of(left_value, right_value)
         if types == "number-number":
-            assert right_value != 0, "Division by zero"
+            if right_value == 0:
+                raise TrivialError("Division by zero", "RuntimeError")
             return left_value / right_value, None
         raise Exception(f"Illegal types for {ast['tag']}:{types}")
     
@@ -739,6 +785,39 @@ def test_evaluator_with_new_tags():
     equals("if(1){x=1; y=2;}", {}, None, {"x":1,"y":2})
     equals("if(1){x=1; if(false) {z=4} y=2;}", {}, None, {"x":1,"y":2})
 
+def test_evaluate_try_catch():
+    print("testing try-catch...")
+    
+    # Test basic try-catch
+    code = """
+    try {
+        x = 1 / 0;
+    } catch (e) {
+        print(e.type);
+        print(e.message);
+    }
+    """
+    ast = parse(tokenize(code))
+    result, _ = evaluate(ast, {})
+    
+    # Test error propagation
+    code = """
+    try {
+        try {
+            x = 1 / 0;
+        } catch (e) {
+            print("inner catch");
+            throw e;
+        }
+    } catch (e) {
+        print("outer catch");
+    }
+    """
+    ast = parse(tokenize(code))
+    result, _ = evaluate(ast, {})
+    
+    print("try-catch tests passed!")
+
 if __name__ == "__main__":
     # statements and programs are tested implicitly
     test_evaluate_single_value()
@@ -760,4 +839,5 @@ if __name__ == "__main__":
     test_evaluate_object_literal()
     test_evaluate_builtins()
     test_evaluator_with_new_tags()
+    test_evaluate_try_catch()
     print("done.")

@@ -891,7 +891,7 @@ def parse_statement_list(tokens):
         statement, tokens = parse_statement(tokens)
         statements.append(statement)
         # we don't need a semicolon terminator after block-terminated statements
-        if statement["tag"] in ["if","while","function"]:     
+        if statement["tag"] in ["if","while","function","try"]:     
             continue
         # we don't need a semicolon terminator after function assignments
         if statement["tag"] == "assign" and statement["value"]["tag"] == "function":
@@ -1265,6 +1265,8 @@ def test_parse_try_statement():
             ]
         }
     }
+    
+    print("parse_try_statement tests passed!")
 
 
 def parse_statement(tokens):
